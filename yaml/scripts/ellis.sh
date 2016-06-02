@@ -9,12 +9,12 @@ sudo apt-get update
 
 # Configure /etc/clearwater/local_config.
 sudo mkdir -p /etc/clearwater
-etcd_ip=$(hostname -I)
+etcd_ip=$(ip addr show dev eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 cat << EOF | sudo -E tee -a /etc/clearwater/local_config
-local_ip=$(hostname -I)
+local_ip=$(ip addr show dev eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 public_ip=${public_ip}
 public_hostname=ellis-0.example.com
-etcd_cluster=$(hostname -I)
+etcd_cluster=$(ip addr show dev eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 EOF
 
 # Now install the software.

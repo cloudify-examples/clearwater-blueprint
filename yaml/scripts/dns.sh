@@ -56,7 +56,7 @@ sudo bash -c 'cat > /var/lib/bind/db.example.com<< EOF
                                 )
 @               3600    IN      NS      ns.example.com.
 
-ns A $(hostname -I)
+ns A $(ip addr show dev eth0 | grep "inet\b" | awk '"'"'{print $2}'"'"' | cut -d/ -f1)
 EOF'
 sudo chown root:bind /var/lib/bind/db.example.com
 # Now that BIND configuration is correct, kick it to reload.

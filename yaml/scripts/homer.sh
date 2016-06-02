@@ -9,12 +9,12 @@ sudo apt-get update
 
 # Configure /etc/clearwater/local_config.
 sudo mkdir -p /etc/clearwater
-etcd_ip=$(hostname -I)
+etcd_ip=$(ip addr show dev eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 cat << EOF | sudo -E tee -a /etc/clearwater/local_config
-local_ip=$(hostname -I)
-public_ip=$(hostname -I)
+local_ip=$(ip addr show dev eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+public_ip=$(ip addr show dev eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 public_hostname=homer-0.example.com
-etcd_cluster=$(hostname -I)
+etcd_cluster=$(ip addr show dev eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 EOF
 
 sudo -E bash -c 'cat > /etc/clearwater/shared_config << EOF
@@ -55,8 +55,8 @@ sudo /usr/share/clearwater/clearwater-config-manager/scripts/upload_shared_confi
 # Update DNS
 cat > /home/ubuntu/dnsupdatefile << EOF
 server ${dns_ip}
-update add homer-0.example.com. 30 A $(hostname -I)
-update add homer.example.com. 30 A $(hostname -I)
+update add homer-0.example.com. 30 A $(ip addr show dev eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+update add homer.example.com. 30 A $(ip addr show dev eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 send
 EOF
 
