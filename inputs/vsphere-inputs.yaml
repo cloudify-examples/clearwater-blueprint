@@ -1,0 +1,4 @@
+cloudify_agent: 'ubuntu'
+template_name: ''
+management_network: ''
+external_network: ''

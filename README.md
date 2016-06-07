@@ -5,7 +5,7 @@ This repository contains a [Cloudify](http://getcloudify.org) blueprint for depl
 ## Repository Contents
 This repository includes the following:
 
-1. A TOSCA blueprints to deploy Clearwater on OpenStack (`clearwater51.yaml`) and VMWare vCloud Director (`clearwater-vcloud.yaml`) including relationships and dependencies between the various Clearwater componentsare
+1. A TOSCA blueprints to deploy Clearwater on OpenStack (`openstack-blueprint.yaml`) and VMWare vCloud Director (`vcloud-blueprint.yaml`) including relationships and dependencies between the various Clearwater componentsare
 2. A DNS plugin to point each node (Bono, Ellis, Homer, Homestead, Sprout and Ralf) to the deployed DNS
 3. Scripts to install the application stack on each node
 
@@ -14,12 +14,12 @@ The blueprint supports healing, e.g you can kill Bono and as a result a new VM w
 
 ## Using the Blueprint
 #### Step 0 
-[Install the Cloudify CLI](http://docs.getcloudify.org/3.3.0/intro/installation/) and [bootstrap a Cloudify manager](http://docs.getcloudify.org/3.3.0/manager/bootstrapping/). 
+[Install the Cloudify CLI](http://docs.getcloudify.org/3.3.1/intro/installation/) and [bootstrap a Cloudify manager](http://docs.getcloudify.org/3.3.1/manager/bootstrapping/).
 
 #### Step 1
 Upload the blueprint to the manager using the following command: 
 ```
-cfy blueprints upload -b blueprint_name -p clearwter51.yaml
+cfy blueprints upload -b blueprint_name -p openstack-blueprint.yaml
 ```
 
 #### Step 2
@@ -43,4 +43,3 @@ cfy executions start -d deployment_name -w uninstall
 
 The following picture shows a running deployment example as it appears in the GUI
 ![alt text](https://github.com/cloudify-examples/clearwater-scripts-plugin-blueprint/blob/master/yaml/images/Clearwater.jpg "ClearWater Deployment")
-

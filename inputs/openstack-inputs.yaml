@@ -1,0 +1,4 @@
+cloudify_agent: 'ubuntu'
+server_image: e8e1ddb9-80e8-4257-96c4-22d4f2a4927f # Ubuntu Server 14.04
+server_flavor_name: m1.medium
+server_security_groups: ['All_ports_open']

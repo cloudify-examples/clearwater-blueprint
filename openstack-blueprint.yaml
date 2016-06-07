@@ -6,6 +6,9 @@ imports:
   - http://www.getcloudify.org/spec/cloudify/3.3.1/types.yaml
   - http://www.getcloudify.org/spec/openstack-plugin/1.3.1/plugin.yaml
   - http://www.getcloudify.org/spec/diamond-plugin/1.3.1/plugin.yaml
+  - https://raw.githubusercontent.com/cloudify-cosmo/cloudify-diamond-snmp-extension/3.3.1-build/types/snmp-types.yaml
+  - types/scale.yaml
+  - types/snmp-types.yaml
 
 ########################################################
 
@@ -15,7 +18,9 @@ plugins:
         source: dns-plugin
 
 ########################################################
+
 relationships:
+
     dns_client_uses_dns_server:
        derived_from: cloudify.relationships.connected_to
        source_interfaces:
@@ -24,7 +29,9 @@ relationships:
 
 
 ########################################################
+
 node_types:
+
     policy_node_type:
        derived_from: cloudify.nodes.SoftwareComponent
        properties:
@@ -38,6 +45,7 @@ node_types:
              stop:
                 implementation: scripts/policy-stop.sh
                 executor: central_deployment_agent
+
 ########################################################
 
 inputs:
@@ -56,6 +64,7 @@ inputs:
 ########################################################
 
 node_templates:
+
     a_node:
         type: cloudify.nodes.Compute
         properties:
@@ -77,6 +86,7 @@ node_templates:
 
     bono_ip:
         type: cloudify.openstack.nodes.FloatingIP
+
     ellis_ip:
         type: cloudify.openstack.nodes.FloatingIP
 
@@ -95,24 +105,37 @@ node_templates:
                 target: bono_ip
             -   type: cloudify.relationships.depends_on
                 target: All_ports_open
-
         interfaces:
-            cloudify.interfaces.monitoring_agent:
-               install:
-                  implementation: diamond.diamond_agent.tasks.install
-                  inputs:
-                     diamond_config:
-                        interval: 5
-               start: diamond.diamond_agent.tasks.start
-               stop: diamond.diamond_agent.tasks.stop
-               uninstall: diamond.diamond_agent.tasks.uninstall
-
-            cloudify.interfaces.monitoring:
-               start:
-                  implementation: diamond.diamond_agent.tasks.add_collectors
-                  inputs:
-                     collectors_config:
-                           CPUCollector: {}
+          cloudify.interfaces.monitoring_agent:
+              install:
+                implementation: diamond.diamond_agent.tasks.install
+                inputs:
+                  diamond_config:
+                    interval: 10
+              start: diamond.diamond_agent.tasks.start
+              stop: diamond.diamond_agent.tasks.stop
+              uninstall: diamond.diamond_agent.tasks.uninstall
+          cloudify.interfaces.monitoring:
+              start:
+                implementation: diamond.diamond_agent.tasks.add_collectors
+                inputs:
+                  collectors_config:
+                    CPUCollector: {}
+                    MemoryCollector: {}
+                    LoadAverageCollector: {}
+                    DiskUsageCollector:
+                      config:
+                        devices: x?vd[a-z]+[0-9]*$
+                    NetworkCollector: {}
+                            ProcessResourcesCollector:
+                              config:
+                                enabled: true
+                                unit: B
+                                measure_collector_time: true
+                                cpu_interval: 0.5
+                                process:
+                                  node:
+                                    name: bono
 
     ellis_vm:
         type: cloudify.openstack.nodes.Server
@@ -141,24 +164,38 @@ node_templates:
         relationships:
             -   type: cloudify.relationships.depends_on
                 target: All_ports_open
-
         interfaces:
-            cloudify.interfaces.monitoring_agent:
-               install:
-                  implementation: diamond.diamond_agent.tasks.install
-                  inputs:
-                     diamond_config:
-                        interval: 5
-               start: diamond.diamond_agent.tasks.start
-               stop: diamond.diamond_agent.tasks.stop
-               uninstall: diamond.diamond_agent.tasks.uninstall
+          cloudify.interfaces.monitoring_agent:
+              install:
+                implementation: diamond.diamond_agent.tasks.install
+                inputs:
+                  diamond_config:
+                    interval: 10
+              start: diamond.diamond_agent.tasks.start
+              stop: diamond.diamond_agent.tasks.stop
+              uninstall: diamond.diamond_agent.tasks.uninstall
+          cloudify.interfaces.monitoring:
+              start:
+                implementation: diamond.diamond_agent.tasks.add_collectors
+                inputs:
+                  collectors_config:
+                    CPUCollector: {}
+                    MemoryCollector: {}
+                    LoadAverageCollector: {}
+                    DiskUsageCollector:
+                      config:
+                        devices: x?vd[a-z]+[0-9]*$
+                    NetworkCollector: {}
+                            ProcessResourcesCollector:
+                              config:
+                                enabled: true
+                                unit: B
+                                measure_collector_time: true
+                                cpu_interval: 0.5
+                                process:
+                                  node:
+                                    name: sprout
 
-            cloudify.interfaces.monitoring:
-               start:
-                  implementation: diamond.diamond_agent.tasks.add_collectors
-                  inputs:
-                     collectors_config:
-                           CPUCollector: {}
     homer_vm:
         type: cloudify.openstack.nodes.Server
         properties:
@@ -171,7 +208,6 @@ node_templates:
         relationships:
             -   type: cloudify.relationships.depends_on
                 target: All_ports_open
-
 
     homestead_vm:
         type: cloudify.openstack.nodes.Server
@@ -229,6 +265,7 @@ node_templates:
                   protocol: udp
 
 ########################################################
+
     bono_app:
         type: cloudify.nodes.SoftwareComponent
         interfaces:
@@ -363,3 +400,48 @@ outputs:
       ip_ellis: { get_attribute: [ ellis_ip, floating_ip_address ] }
       ip_bono: { get_attribute: [ bono_ip, floating_ip_address ] }
       signup_code: secret
+
+groups:
+
+  scale_out_sprout:
+    members: [sprout_vm]
+    policies:
+      auto_scale_up:
+        type: scale_policy_type
+        properties:
+          policy_operates_on_group: true
+          scale_limit: 6
+          scale_direction: '<'
+          scale_threshold: 6
+          service_selector: .*sprout_vm.*.process.sprout.cpu.percent
+          cooldown_time: 60
+        triggers:
+          execute_scale_workflow:
+            type: cloudify.policies.triggers.execute_workflow
+            parameters:
+              workflow: scale
+              workflow_parameters:
+                delta: 1
+                node_id: sprout_app
+                scale_compute: true
+
+  scale_in_sprout:
+    members: [sprout_vm]
+    policies:
+      auto_scale_down:
+        type: scale_policy_type
+        properties:
+          scale_limit: 2
+          scale_direction: '>'
+          scale_threshold: 1
+          service_selector: .*sprout_vm.*.process.sprout.cpu.percent
+          cooldown_time: 60
+        triggers:
+          execute_scale_workflow:
+            type: cloudify.policies.triggers.execute_workflow
+            parameters:
+              workflow: scale
+              workflow_parameters:
+                delta: -1
+                node_id: sprout_app
+                scale_compute: true
