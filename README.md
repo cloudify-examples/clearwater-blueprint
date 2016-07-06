@@ -14,30 +14,18 @@ The blueprint supports healing, e.g you can kill Bono and as a result a new VM w
 
 ## Using the Blueprint
 #### Step 0 
-[Install the Cloudify CLI](http://docs.getcloudify.org/3.3.0/intro/installation/) and [bootstrap a Cloudify manager](http://docs.getcloudify.org/3.3.0/manager/bootstrapping/). 
+[Install the Cloudify CLI](http://docs.getcloudify.org/3.4.0/intro/installation/) and [bootstrap a Cloudify manager](http://docs.getcloudify.org/3.4.0/manager/bootstrapping/).
 
 #### Step 1
-Upload the blueprint to the manager using the following command: 
+Upload the blueprint to the manager, create a deployment and invoke `install` workflow using the following command:
 ```
-cfy blueprints upload -b blueprint_name -p clearwter51.yaml
-```
-
-#### Step 2
-Create a deployment using the following command:
-```
-cfy deployments create -b blueprint_name -d deployment_name
-```
-
-#### Step 3 
-Invoke the `install` workflow: 
-```
-cfy executions start -d deployment_name -w install
+cfy install -p clearwater51.yaml
 ```
 
 #### Uninstalling
-To uninstall and delete the running deployment, invoke the `uninstall` workflow: 
+To uninstall and delete the running deployment and delete created blueprint, invoke the `uninstall` workflow:
 ```
-cfy executions start -d deployment_name -w uninstall
+cfy uninstall -d deployment_name
 ```
 
 
